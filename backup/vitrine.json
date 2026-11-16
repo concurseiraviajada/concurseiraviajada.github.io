@@ -1,0 +1,50 @@
+{
+  "vitrine": {
+    "id": "ad97136c-cd36-4363-9a88-b31b50c0aed6",
+    "slug": "concurseiraviajada",
+    "nome": "Carol",
+    "instagram": null,
+    "bio": "Mãe, concurseira e fã de beleza com praticidade. Aqui ficam os achadinhos que eu uso de verdade no dia a dia.",
+    "avatar": null,
+    "categorias_achadinhos": [
+      "Maternidade",
+      "Beleza",
+      "Papelaria",
+      "Casa"
+    ],
+    "categorias_estudos": [
+      "Cursos",
+      "Materiais",
+      "Ferramentas"
+    ],
+    "criado_em": "2026-11-16T02:42:01.480049+00:00",
+    "atualizado_em": "2026-11-16T02:42:01.480049+00:00"
+  },
+  "produtos": [
+    {
+      "id": "8b2284c0-b278-4fab-b49d-c1208276e8f3",
+      "aba": "estudos",
+      "categoria": "Ferramentas",
+      "tipo": "infoproduto",
+      "nome": "Alta Aprovação",
+      "frase": null,
+      "emoji": "⏱️",
+      "foto": null,
+      "link": "https://altaaprovacao.com.br/embaixadores?code=VIAJADA",
+      "loja": "outra",
+      "loja_nome": "Alta Aprovação",
+      "preco_pago": 17.99,
+      "pago_em": "2026-11-01",
+      "tem_cupom": true,
+      "cupom_codigo": "VIAJADA",
+      "cupom_desconto": "20% Off",
+      "selo": "favorito",
+      "opiniao_texto": null,
+      "opiniao_gosto": [],
+      "opiniao_atencao": null,
+      "ordem": 1794798849.28586,
+      "criado_em": "2026-11-16T03:14:09.252778+00:00",
+      "atualizado_em": "2026-11-16T03:18:17.54546+00:00"
+    }
+  ]
+}
