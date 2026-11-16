@@ -462,7 +462,7 @@ function abrirLixeira(){
 /* ---------- Editar perfil ---------- */
 let perfilRascunho = null;
 function abrirPerfil(){
-  perfilRascunho = { avatarNovo:null };
+  perfilRascunho = { avatarNovo:null, removerAvatar:false };
   abrirPainel(`
     <h3 id="sheet-title" style="margin-bottom:4px">Editar perfil</h3>
     <form class="form" id="form-perfil" novalidate>
@@ -470,6 +470,7 @@ function abrirPerfil(){
       <div class="photo">
         <div class="prev redondo" id="prev-avatar">${V.avatar ? `<img src="${esc(urlFoto(V.avatar))}" alt="">` : esc(V.nome[0] || "?")}</div>
         <label class="pick">📷 Trocar foto<input type="file" accept="image/*" id="foto-avatar" hidden></label>
+        <button type="button" class="login-link" id="tirar-avatar" style="margin:0" ${V.avatar ? "" : "hidden"}>remover</button>
       </div>
       <label>Nome *</label>
       <input type="text" name="nome" value="${esc(V.nome)}" maxlength="60">
@@ -494,12 +495,13 @@ async function salvarFormPerfil(form){
   const avatarAntigo = V.avatar; let enviado = null;
   try{
     const campos = { nome, instagram, bio };
+    if(perfilRascunho.removerAvatar) campos.avatar = null;    // volta a mostrar a inicial do nome
     if(perfilRascunho.avatarNovo){
       enviado = await enviarFoto(perfilRascunho.avatarNovo, `${V.donaId}/avatar-${Date.now()}.jpg`);
       campos.avatar = enviado;
     }
     V = await salvarPerfil(V, campos);
-    if(enviado && avatarAntigo) apagarFoto(avatarAntigo);
+    if((enviado || perfilRascunho.removerAvatar) && avatarAntigo) apagarFoto(avatarAntigo);
     fecharPainel(); renderCabecalho(); renderChips(); render(); toast("✅ Perfil atualizado");
   }catch(e){
     console.error(e); if(enviado) apagarFoto(enviado);
@@ -554,6 +556,10 @@ $("#overlay").addEventListener("click", async e => {
     olho.setAttribute("aria-label", mostrar ? "Esconder senha" : "Mostrar senha");
     return;
   }
+  if(e.target.id === "tirar-avatar"){
+    perfilRascunho.avatarNovo = null; perfilRascunho.removerAvatar = true;
+    $("#prev-avatar").textContent = (V.nome || "?").trim()[0].toUpperCase(); e.target.hidden = true; return;
+  }
   if(e.target.id === "tirar-foto"){ rascunho.foto = null; rascunho.fotoNova = null; $("#prev").textContent = rascunho.emoji; e.target.hidden = true; return; }
   const cd = e.target.closest("[data-confirm-del]");
   if(cd){
@@ -589,6 +595,7 @@ $("#overlay").addEventListener("change", async e => {
     try{
       perfilRascunho.avatarNovo = await comprimir(e.target.files[0], { max:400, quadrado:true, alvo:40*1024 });
       $("#prev-avatar").innerHTML = `<img src="${URL.createObjectURL(perfilRascunho.avatarNovo)}" alt="">`;
+      perfilRascunho.removerAvatar = false; $("#tirar-avatar").hidden = false;
     }catch(err){ toast("Não consegui abrir essa imagem"); }
   }
 });
