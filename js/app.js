@@ -26,6 +26,13 @@ let PRODUTOS = [];         // todos (inclui a lixeira, se for a dona logada)
 let carregando = true, erroCarga = false;
 let usuarioId = null, admin = false;
 let abaAtual = "achadinhos", catAtual = "Todos", lojaAtual = "todas", busca = "", filtroSelo = null;
+let abaEscolhida = false;  // vira true quando a pessoa toca numa aba (aí a página não troca mais sozinha)
+
+// Abre na aba que tem itens; se as duas tiverem (ou nenhuma), abre em Achadinhos
+function abaInicial(){
+  const tem = aba => visiveis().some(p => p.aba === aba);
+  return !tem("achadinhos") && tem("estudos") ? "estudos" : "achadinhos";
+}
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -399,7 +406,7 @@ async function salvarForm(form){
 
     if(novo) PRODUTOS.unshift(salvo); else PRODUTOS = PRODUTOS.map(x => x.id === salvo.id ? salvo : x);
     fecharPainel();
-    abaAtual = salvo.aba;
+    abaAtual = salvo.aba; abaEscolhida = true;
     if(novo){ catAtual = "Todos"; lojaAtual = "todas"; filtroSelo = null; busca = ""; $("#q").value = ""; }
     renderChips(); render();
     toast(novo ? "✅ Item adicionado" : "✅ Alterações salvas");
@@ -503,7 +510,7 @@ async function salvarFormPerfil(form){
 
 /* ---------- Eventos ---------- */
 $("#abas").addEventListener("click", e => { const b = e.target.closest("[data-aba]"); if(!b) return;
-  abaAtual = b.dataset.aba; catAtual = "Todos"; lojaAtual = "todas"; filtroSelo = null; renderChips(); render(); });
+  abaAtual = b.dataset.aba; abaEscolhida = true; catAtual = "Todos"; lojaAtual = "todas"; filtroSelo = null; renderChips(); render(); });
 $("#chips").addEventListener("click", e => { const b = e.target.closest(".chip"); if(!b) return;
   if(b.dataset.selo) filtroSelo = filtroSelo === b.dataset.selo ? null : b.dataset.selo; else catAtual = b.dataset.c; renderChips(); render(); });
 $("#stores").addEventListener("click", e => { const b = e.target.closest(".store-btn"); if(!b) return; lojaAtual = b.dataset.l; renderChips(); render(); });
@@ -653,6 +660,7 @@ async function recarregar(){
   carregando = false;
   // no plano B (cópia de segurança) ninguém edita, nem a dona logada
   admin = !modoSeguranca && !!(usuarioId && V && usuarioId === V.donaId);
+  if(!abaEscolhida) abaAtual = abaInicial();
   renderCabecalho(); renderChips(); render();
 }
 

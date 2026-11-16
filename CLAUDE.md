@@ -41,7 +41,7 @@ backup/           cópia de segurança gerada pelo robô (vitrine.json + fotos/)
 - **Aviso de favoritos**: aparece (nunca bloqueia) quando os favoritos passam de **20% dos itens, mínimo 5**. "Já recomprei" não tem limite.
 - **Sem página intermediária por produto**: o clique no cartão vai direto para a loja; a opinião fica no painel "💬 Ver minha opinião" (opinião, "O que eu gosto", "Ponto de atenção").
 - **Preço = o que ela pagou, com mês/ano** ("💸 Paguei R$ X em mês/ano"), nunca "preço atual". Opcional.
-- **Duas abas**: `🛍️ Achadinhos` | `🎓 Estudos e materiais`.
+- **Duas abas**: `🛍️ Achadinhos` | `🎓 Estudos e materiais`. A página abre na aba que tem itens; se as duas tiverem (ou nenhuma), abre em Achadinhos. Depois que a pessoa toca numa aba, não troca mais sozinha.
 - **3 tipos de item**: 📦 Produto · 🎓 Infoproduto · 🆓 Grátis. **Não existe tipo "Cupom".**
 - **Cupom**: chavinha "🏷️ Tenho cupom próprio" (código + desconto) em produto/infoproduto, **só para cupom DELA que gera comissão**. Cupom genérico de loja não entra. Cartão destaca o cupom com botão "📋 Copiar".
 - **Sem filtro "Com cupom"** (pareceria forçar venda).
