@@ -3,7 +3,7 @@
     "id": "ad97136c-cd36-4363-9a88-b31b50c0aed6",
     "slug": "concurseiraviajada",
     "nome": "Carol",
-    "instagram": null,
+    "instagram": "concurseiraviajada",
     "bio": "Mãe, concurseira e fã de beleza com praticidade. Aqui ficam os achadinhos que eu uso de verdade no dia a dia.",
     "avatar": null,
     "categorias_achadinhos": [
@@ -18,7 +18,7 @@
       "Ferramentas"
     ],
     "criado_em": "2026-11-16T02:42:01.480049+00:00",
-    "atualizado_em": "2026-11-16T02:42:01.480049+00:00"
+    "atualizado_em": "2026-11-16T04:31:27.64218+00:00"
   },
   "produtos": [
     {
@@ -34,7 +34,7 @@
       "loja": "outra",
       "loja_nome": "Alta Aprovação",
       "preco_pago": 17.99,
-      "pago_em": "2026-11-01",
+      "pago_em": "2026-09-01",
       "tem_cupom": true,
       "cupom_codigo": "VIAJADA",
       "cupom_desconto": "20% Off",
@@ -44,7 +44,7 @@
       "opiniao_atencao": null,
       "ordem": 1794798849.28586,
       "criado_em": "2026-11-16T03:14:09.252778+00:00",
-      "atualizado_em": "2026-11-16T03:18:17.54546+00:00"
+      "atualizado_em": "2026-11-16T04:17:54.493716+00:00"
     }
   ]
 }
