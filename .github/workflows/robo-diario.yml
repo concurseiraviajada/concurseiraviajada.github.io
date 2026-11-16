@@ -1,0 +1,54 @@
+# Robô diário da vitrine: mantém o Supabase ativo, esvazia a lixeira (30 dias)
+# e salva a cópia de segurança em backup/. Se falhar, o GitHub manda e-mail
+# para quem fez a última alteração neste arquivo.
+name: Robô diário
+
+on:
+  schedule:
+    - cron: "17 9 * * *"     # todo dia às 06:17 (horário de Brasília)
+  workflow_dispatch:          # botão "Run workflow" para rodar na hora
+
+permissions:
+  contents: write
+
+concurrency:
+  group: robo-diario
+  cancel-in-progress: false
+
+jobs:
+  robo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Banco, lixeira e cópia de segurança
+        run: node scripts/robo.mjs
+        env:
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+      # O GitHub desliga agendamentos de repositórios sem nenhuma alteração
+      # em 60 dias. Se o último commit tiver mais de 50 dias, o robô deixa
+      # um "sinal de vida" para isso não acontecer.
+      - name: Sinal de vida (evita o desligamento de 60 dias)
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - ultimo )) -gt $(( 50 * 86400 )) ]; then
+            date -u +%F > backup/robo-ativo.txt
+          fi
+
+      - name: Salvar no repositório (só se algo mudou)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backup
+          if git diff --cached --quiet; then
+            echo "Nada mudou hoje."
+          else
+            git commit -m "Cópia de segurança $(date -u +%F)"
+            git push
+          fi

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurseira Viajada — achadinhos que eu uso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css?v=20261116c">
+</head>
+<body>
+<div class="wrap">
+
+  <button class="entrar-topo" id="entrar" type="button">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+    Entrar
+  </button>
+
+  <header>
+    <div class="avatar" id="avatar"></div>
+    <h1 id="nome">&nbsp;</h1>
+    <a class="handle" id="handle" href="#" hidden></a>
+    <p class="bio" id="bio"></p>
+    <a class="publi" href="#aviso">🔗 Contém links de afiliado · saiba mais</a>
+  </header>
+
+  <div class="admin-bar">
+    <span>✏️ Modo <span id="modo-nome">edição</span></span>
+    <div class="admin-acoes">
+      <button id="btn-perfil" type="button">👤 Perfil</button>
+      <button id="btn-lixeira" type="button">🗑️ Lixeira<span id="n-lixeira"></span></button>
+      <button id="sair" type="button">Sair</button>
+    </div>
+  </div>
+
+  <div class="abas" id="abas" role="tablist"></div>
+
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Buscar…" autocomplete="off">
+  </div>
+  <div class="chips" id="chips"></div>
+  <div class="stores" id="stores"></div>
+  <p class="price-hint" id="price-hint" hidden>💸 Os valores mostrados são quanto eu paguei, na data indicada. O preço de hoje aparece na loja.</p>
+
+  <main class="grid" id="grid"></main>
+
+  <section class="disclosure" id="aviso">
+    <h2>💛 Transparência</h2>
+    <p><strong>Os links desta página são links de afiliado ou cupons meus.</strong> Quando você compra por eles, a loja ou plataforma (como Shopee, Mercado Livre, Amazon e outras plataformas de afiliados) me paga uma pequena comissão, <strong>sem nenhum custo a mais para você</strong>. E, com o meu cupom, você ainda ganha desconto.</p>
+    <p><strong>Eu não vendo nada.</strong> Não tenho loja, não faço entregas e não cuido de pagamento, troca ou garantia: tudo isso é feito diretamente pela loja ou plataforma vendedora.</p>
+    <p>Aqui só entram produtos e cursos que eu <strong>usei de verdade</strong> e gostei a ponto de querer compartilhar com vocês.</p>
+    <!-- só aparece quando existe algum item 🆓 Grátis na vitrine (js/app.js > render) -->
+    <p id="aviso-gratis" hidden>Os materiais marcados como <strong>🆓 Grátis</strong> são <strong>feitos por mim</strong>, para o meu próprio estudo, e compartilho aqui de graça porque vocês me pediram. <strong>Não são cópias</strong> de cursos, apostilas ou materiais de outras pessoas ou plataformas, e não me rendem nada.</p>
+    <p>Os valores da vitrine são o que <strong>eu paguei</strong> na data indicada. Quem define o preço é o vendedor, então preço, frete, disponibilidade e validade dos cupons podem mudar a qualquer momento. Confira sempre na página da loja antes de comprar.</p>
+  </section>
+
+  <footer>Feito com carinho · atualizado em <span id="upd"></span></footer>
+</div>
+
+<button class="fab" id="fab" aria-label="Adicionar produto">+</button>
+<div class="toast" id="toast"></div>
+
+<div class="overlay" id="overlay" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" id="sheet"></div>
+</div>
+
+<script src="js/vendor/supabase-2.119.0.js"></script>
+<script src="js/config.js?v=20261116c"></script>
+<script src="js/dados.js?v=20261116c"></script>
+<script src="js/app.js?v=20261116c"></script>
+</body>
+</html>
