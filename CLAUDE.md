@@ -89,8 +89,8 @@ backup/           cópia de segurança gerada pelo robô (vitrine.json + fotos/)
 2. ✅ Supabase: conta, organização e projeto `concurseira-viajada`; 001 e 002 aplicados; teste de segurança 17/17 ✅ (15/11/2026).
 3. ✅ Login real (e-mail + senha) no painel pop-up, botão "Entrar" no canto, aviso de modo de segurança. Testado de fora: visitante lê, não cria/edita/apaga, cadastro bloqueado, upload de foto bloqueado.
 4. ✅ Vitrine ligada ao Supabase (abas, tipos, cupom, lojas, fotos comprimidas no Storage com lazy loading, lixeira com Desfazer/Restaurar, editar perfil, criar categoria). Começa VAZIA (decisão do desenvolvedor: sem os exemplos do protótipo). Testado pelo desenvolvedor logado como a usuária (adicionar, foto, cupom, editar, lixeira, perfil, sair) em 16/11/2026.
-5. 🟡 Robô diário + cópia de segurança + plano B escritos e testados localmente (plano B simulado). Falta: repositório no GitHub, segredo SUPABASE_SECRET_KEY e primeira execução.
-6. Publicar no GitHub Pages (organização da marca) + prévia de link (Open Graph para WhatsApp/Instagram).
+5. ✅ Robô diário + cópia de segurança + plano B. Segredo `SUPABASE_SECRET_KEY` (chave `robo_github`, só para o robô) nos Secrets do repo; permissões do robô em `supabase/003_permissoes_robo.sql`. Primeira execução OK em 16/11/2026 (cópia sem lixeira e sem dona_id). Commits do robô também disparam o deploy do Pages.
+6. 🟡 Publicado em https://concurseiraviajada.github.io (Pages a partir do `main`, HTTPS). Falta: prévia de link (Open Graph para WhatsApp/Instagram).
 7. Testar no celular: a usuária adiciona um item e outra pessoa vê.
 
 **Extras para depois (não fazer agora):** contador de cliques por item, link direto para cada item (stories), reordenar arrastando (campo `ordem` já previsto), renomear/apagar categorias, página-raiz da usuária (tipo linktree) levando à vitrine.
