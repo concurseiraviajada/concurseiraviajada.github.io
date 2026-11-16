@@ -95,4 +95,6 @@ backup/           cópia de segurança gerada pelo robô (vitrine.json + fotos/)
 
 8. ✅ **Web app** (16/11/2026): `manifest.webmanifest` (nome "Concurseira Viajada", ícone "Concurseira", tela cheia, cores da marca) + ícones `img/icone-192.png`, `img/icone-512.png`, `img/icone-512-adaptavel.png`. **Sem botão de instalar** (instala pelo menu do navegador) e **sem service worker / sem offline** (sempre online, evita versão velha) — decisões do desenvolvedor.
 
+9. ✅ **Layout de computador "vitrine larga"** (16/11/2026, decisão do desenvolvedor, preferido a "perfil na lateral"): a partir de 700px a grade usa cartões de 236px centralizados (3 por linha no tablet, 4 no computador); cabeçalho/abas/busca/filtros limitados a 600px e centralizados; painéis viram janela centralizada. **No celular nada muda.** Tudo em um `@media (min-width:700px)` no fim de `css/estilo.css`.
+
 **Extras para depois (não fazer agora):** contador de cliques por item, link direto para cada item (stories), reordenar arrastando (campo `ordem` já previsto), renomear/apagar categorias, página-raiz da usuária (tipo linktree) levando à vitrine.

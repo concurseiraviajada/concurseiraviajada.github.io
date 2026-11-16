@@ -208,3 +208,28 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
 .toast-acao{border:none;background:none;color:#F3C6DD;font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:0}
 .card .cupom{flex-direction:column;gap:2px;text-align:center;justify-content:center}
 .card .cupom span{margin-left:0}
+
+/* =====================================================================
+   COMPUTADOR E TABLET ("vitrine larga")
+   No celular nada muda. A partir de 700px de largura, a grade ganha mais
+   cartões por linha (3 no tablet, 4 no computador), do mesmo tamanho dos
+   do celular e centralizados. Cabeçalho, abas e busca ficam centralizados
+   com largura limitada. Os painéis viram uma janela no meio da tela.
+   ===================================================================== */
+@media (min-width: 700px){
+  .wrap{max-width:1080px;padding:40px 28px 56px}
+  header,.admin-bar,.abas,.search,.chips,.stores,.price-hint{max-width:600px;margin-left:auto;margin-right:auto}
+  .chips{justify-content:center;flex-wrap:wrap;overflow:visible}
+  .grid{grid-template-columns:repeat(auto-fit,236px);justify-content:center;gap:16px}
+  .disclosure{max-width:760px;margin-left:auto;margin-right:auto}
+  .entrar-topo{top:22px;right:28px}
+  .fab{right:max(24px,calc(50% - 512px));bottom:28px}
+  .card{transition:transform .15s,box-shadow .15s}
+  .card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(46,34,48,.10)}
+
+  /* painéis: janela centralizada em vez de "gaveta" que sobe de baixo */
+  .overlay{align-items:center;padding:24px}
+  .sheet{max-width:560px;border-radius:22px;max-height:88vh;padding:22px 26px 26px;transform:translateY(12px) scale(.98)}
+  .overlay.open .sheet{transform:none}
+  .grab{display:none}
+}
