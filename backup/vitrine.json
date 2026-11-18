@@ -23,9 +23,9 @@
   "produtos": [
     {
       "id": "8e341c4f-b9ca-49d3-823e-13f05a026fca",
-      "aba": "estudos",
-      "categoria": "Cursos",
-      "tipo": "infoproduto",
+      "aba": "achadinhos",
+      "categoria": "Maternidade",
+      "tipo": "produto",
       "nome": "Neurox",
       "frase": "Ajudou a melhorar meu desempenho e cansaço.",
       "emoji": "🛍️",
@@ -44,7 +44,7 @@
       "opiniao_atencao": null,
       "ordem": 1794909694.76105,
       "criado_em": "2026-11-17T10:01:34.724599+00:00",
-      "atualizado_em": "2026-11-17T10:10:52.803589+00:00"
+      "atualizado_em": "2026-11-17T23:40:20.689895+00:00"
     },
     {
       "id": "65815ac6-ef4f-4954-b770-be2e77f5a9f4",
