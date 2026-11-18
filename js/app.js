@@ -544,7 +544,8 @@ function barra(valor, maximo){
 
 async function abrirInsights(filtro = insightsFiltro, datas){
   if(filtro === "datas" && datas) insightsDatas = datas;
-  if(filtro === "datas" && !insightsDatas) insightsDatas = { de: diasAtras(6), ate: diasAtras(0) };
+  // padrão do 📅 Datas: últimos 7 dias, mas nunca antes do início da contagem (o calendário não aceita)
+  if(filtro === "datas" && !insightsDatas){ const d7 = diasAtras(6); insightsDatas = { de: d7 < INICIO_ISO ? INICIO_ISO : d7, ate: diasAtras(0) }; }
   insightsFiltro = filtro;
   const { de, ate } = intervaloInsights(filtro);
   const desde30 = diasAtras(DIAS_SEM_CLIQUE - 1);
@@ -886,6 +887,7 @@ $("#overlay").addEventListener("submit", e => {
     const de = e.target.de.value, ate = e.target.ate.value;
     if(!de || !ate){ $("#err").textContent = "Escolha as duas datas."; return; }
     if(de > ate){ $("#err").textContent = "A data “De” precisa ser antes da “Até”."; return; }
+    if(de < INICIO_ISO){ $("#err").textContent = `A contagem começou em ${dataBR(INICIO_ISO)}.`; return; }
     if(ate > diasAtras(0)){ $("#err").textContent = "A data “Até” não pode ser no futuro."; return; }
     abrirInsights("datas", { de, ate });
   }
