@@ -149,7 +149,7 @@ function render(){
     const L = loja(p), S = SELOS[p.selo];
     return `<div class="card">
       <div class="tools"><button data-edit="${p.id}" aria-label="Editar">✏️</button><button data-del="${p.id}" aria-label="Apagar">🗑️</button></div>
-      <a class="hit" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">
+      <a class="hit" href="${esc(p.link)}" target="_blank" rel="noopener sponsored" data-clique="${p.id}">
       <div class="thumb">${esc(p.emoji || "🛍️")}${imgFoto(p)}
         <span class="badge" style="${corLoja(L)}">${esc(L.nome)}</span>
         ${S ? `<span class="selo ${S.cls}">${S.txt}</span>` : ""}
@@ -187,7 +187,7 @@ function abrirOpiniao(p){
     ${(o.gosto||[]).length ? `<h4>O que eu gosto</h4><ul>${o.gosto.map(g => `<li>${esc(g)}</li>`).join("")}</ul>` : ""}
     ${o.atencao ? `<h4>Ponto de atenção</h4><div class="atencao">⚠️ ${esc(o.atencao)}</div>` : ""}
     ${cupomHtml(p)}
-    <a class="cta" style="${corLoja(L)}" href="${esc(p.link)}" target="_blank" rel="noopener sponsored">${esc(ctaTxt(p))}</a>
+    <a class="cta" style="${corLoja(L)}" href="${esc(p.link)}" target="_blank" rel="noopener sponsored" data-clique="${p.id}">${esc(ctaTxt(p))}</a>
     <p class="fine">${p.tipo === "gratis" ? "Material gratuito · abre em outra página" : "Link de afiliado · a compra é feita direto na loja"}</p>`);
 }
 
@@ -510,6 +510,229 @@ async function salvarFormPerfil(form){
   }
 }
 
+/* ---------- Painel de Insights (só a dona vê) ---------- */
+const INICIO_INSIGHTS = "18/11/2026";          // dia em que a contagem começou
+const DIAS_SEM_CLIQUE = 30;
+let insightsCache = null;                      // { visitas, cliques } dos últimos 90 dias
+const isoDia = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
+const diasAtras = n => isoDia(Date.now() - n * 86400000);
+const fmt = n => Number(n).toLocaleString("pt-BR");
+
+function barra(valor, maximo){
+  const pct = maximo ? Math.max(2, Math.round(valor / maximo * 100)) : 0;
+  return `<span class="ins-barra" aria-hidden="true"><span style="width:${valor ? pct : 0}%"></span></span>`;
+}
+
+async function abrirInsights(periodo = 30){
+  abrirPainel(`<h3 id="sheet-title">📊 Insights</h3><p class="hint" style="margin-top:6px">Carregando os números…</p>`);
+  try{
+    if(!insightsCache) insightsCache = await carregarInsights(diasAtras(89));
+  }catch(e){
+    console.error(e);
+    abrirPainel(`<h3 id="sheet-title">📊 Insights</h3><p class="err">Não consegui carregar os números agora. Tente de novo em instantes.</p>
+      <div class="actions"><button type="button" class="btn ghost" data-close>Fechar</button></div>`);
+    return;
+  }
+  const desde = diasAtras(periodo - 1), desde30 = diasAtras(DIAS_SEM_CLIQUE - 1);
+  const visitas = insightsCache.visitas.filter(v => v.dia >= desde);
+  const cliques = insightsCache.cliques.filter(c => c.dia >= desde);
+  const totalVisitas = visitas.reduce((s, v) => s + v.total, 0);
+  const totalCliques = cliques.reduce((s, c) => s + c.total, 0);
+  const taxa = totalVisitas ? Math.round(totalCliques / totalVisitas * 100) : 0;
+
+  const porOrigem = {};
+  visitas.forEach(v => porOrigem[v.origem] = (porOrigem[v.origem] || 0) + v.total);
+  const origens = Object.entries(porOrigem).sort((a, b) => b[1] - a[1]);
+  const maxOrigem = origens.length ? origens[0][1] : 0;
+
+  const porItem = {}, porItem30 = {};
+  cliques.forEach(c => porItem[c.produto_id] = (porItem[c.produto_id] || 0) + c.total);
+  insightsCache.cliques.filter(c => c.dia >= desde30).forEach(c => porItem30[c.produto_id] = (porItem30[c.produto_id] || 0) + c.total);
+  const itens = visiveis().map(p => ({ p, n: porItem[p.id] || 0 })).sort((a, b) => b.n - a.n || a.p.nome.localeCompare(b.p.nome));
+  const maxItem = itens.length ? itens[0].n : 0;
+  const semClique = p => !porItem30[p.id] && p.criadoEm && (Date.now() - new Date(p.criadoEm).getTime()) >= DIAS_SEM_CLIQUE * 86400000;
+
+  const chip = n => `<button type="button" class="chip ${n===periodo?"on":""}" data-periodo="${n}">${n} dias</button>`;
+  abrirPainel(`
+    <h3 id="sheet-title">📊 Insights</h3>
+    <p class="hint" style="margin-top:4px">Contagens anônimas: dá pra saber quantos, nunca quem. Suas próprias visitas (logada) não contam.
+      Contando desde ${INICIO_INSIGHTS}.</p>
+    <div class="chips ins-periodo">${chip(7)}${chip(30)}${chip(90)}</div>
+
+    <div class="ins-numeros">
+      <div class="ins-num"><strong>${fmt(totalVisitas)}</strong><span>visitas na vitrine</span></div>
+      <div class="ins-num"><strong>${fmt(totalCliques)}</strong><span>cliques para a loja</span></div>
+      <div class="ins-num"><strong>${totalVisitas ? taxa + "%" : "—"}</strong><span>${totalVisitas ? `de cada 100 visitas, ${taxa} clicam` : "sem visitas no período"}</span></div>
+    </div>
+
+    <h4>De onde vieram as visitas</h4>
+    ${origens.length ? `<ul class="ins-lista">${origens.map(([o, n]) => `
+      <li title="${esc(ORIGENS[o] || o)}: ${fmt(n)} visita${n===1?"":"s"}"><span class="ins-nome">${esc(ORIGENS[o] || o)}</span>${barra(n, maxOrigem)}<span class="ins-valor">${fmt(n)}</span></li>`).join("")}</ul>`
+      : `<p class="hint">Nenhuma visita contada ainda neste período.</p>`}
+    <p class="hint">Dica: na bio do Instagram use o link <strong>concurseiraviajada.github.io/?de=bio</strong> e nos stories
+      <strong>…/?de=stories</strong>, para saber de onde cada visita veio.</p>
+
+    <h4>Cliques por item</h4>
+    ${itens.length ? `<ul class="ins-lista ins-itens">${itens.map(({ p, n }) => `
+      <li title="${esc(p.nome)}: ${fmt(n)} clique${n===1?"":"s"}">
+        <span class="ins-nome"><span class="ins-emoji">${esc(p.emoji || "🛍️")}</span>${esc(p.nome)}
+          ${semClique(p) ? `<em class="ins-selo">💤 sem cliques em ${DIAS_SEM_CLIQUE} dias</em>` : ""}</span>
+        ${barra(n, maxItem)}<span class="ins-valor">${fmt(n)}</span></li>`).join("")}</ul>
+      <p class="hint">“💤 sem cliques em ${DIAS_SEM_CLIQUE} dias” aparece em itens que estão na vitrine há mais de ${DIAS_SEM_CLIQUE} dias
+        e ninguém clicou nesse tempo. Tirar ou não é decisão sua.</p>`
+      : `<p class="hint">Nenhum item na vitrine ainda.</p>`}
+    <div class="actions"><button type="button" class="btn ghost" data-close>Fechar</button></div>`);
+}
+
+/* ---------- Painel de Categorias (renomear, mover itens, apagar vazias) ---------- */
+// Regra: categoria com itens NÃO pode ser apagada. Primeiro mova os itens
+// (com confirmação), depois apague a categoria vazia (com confirmação).
+// A contagem inclui itens da lixeira, para nada ficar sem categoria ao restaurar.
+const contarNaCategoria = (aba, cat) => {
+  const todos = PRODUTOS.filter(p => p.aba === aba && p.cat === cat);
+  return { total: todos.length, lixeira: todos.filter(p => p.apagadoEm).length };
+};
+const txtItens = ({ total, lixeira }) => total
+  ? `${total} ite${total===1?"m":"ns"}${lixeira ? ` (${lixeira} na lixeira)` : ""}` : "vazia";
+
+function abrirCategorias(){
+  const secao = aba => {
+    const cats = V.categorias[aba];
+    return `<h4>${ABAS[aba].txt}</h4><ul class="cat-lista">${cats.map(c => {
+      const n = contarNaCategoria(aba, c);
+      const podeApagar = !n.total && cats.length > 1;
+      return `<li><div class="cat-txt"><strong>${esc(c)}</strong><small>${txtItens(n)}</small></div>
+        <div class="cat-acoes">
+          <button type="button" class="btn ghost" data-cat="renomear" data-aba="${aba}" data-nome="${esc(c)}" aria-label="Renomear ${esc(c)}">✏️</button>
+          ${n.total ? `<button type="button" class="btn ghost" data-cat="mover" data-aba="${aba}" data-nome="${esc(c)}">Mover itens</button>` : ""}
+          <button type="button" class="btn ghost" data-cat="apagar" data-aba="${aba}" data-nome="${esc(c)}" ${podeApagar ? "" : "disabled"}
+            title="${podeApagar ? "Apagar" : n.total ? "Mova os itens antes de apagar" : "Precisa existir pelo menos uma categoria"}" aria-label="Apagar ${esc(c)}">🗑️</button>
+        </div></li>`;
+    }).join("")}</ul>`;
+  };
+  abrirPainel(`
+    <h3 id="sheet-title">🏷️ Categorias</h3>
+    <p class="hint" style="margin-top:4px">Para apagar uma categoria com itens, primeiro toque em <strong>Mover itens</strong>.
+      Quando ela ficar vazia, o 🗑️ é liberado.</p>
+    ${secao("achadinhos")}${secao("estudos")}
+    <p class="hint">Para criar uma categoria nova, use “➕ Nova categoria…” no formulário do item.</p>
+    <div class="actions"><button type="button" class="btn ghost" data-close>Fechar</button></div>`);
+}
+
+function categoriaRenomear(aba, nome){
+  const n = contarNaCategoria(aba, nome);
+  abrirPainel(`
+    <h3 id="sheet-title">Renomear categoria</h3>
+    <form class="form" id="form-cat-renomear" novalidate data-aba="${aba}" data-nome="${esc(nome)}">
+      <label>Novo nome para “${esc(nome)}”</label>
+      <input type="text" name="novo" value="${esc(nome)}" maxlength="40">
+      <p class="hint">${n.total ? `Os ${txtItens(n)} desta categoria passam para o nome novo.` : "A categoria está vazia."}</p>
+      <p class="err" id="err"></p>
+      <div class="actions">
+        <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
+        <button type="submit" class="btn primary">Salvar</button>
+      </div>
+    </form>`);
+}
+async function salvarRenomear(form){
+  const aba = form.dataset.aba, antigo = form.dataset.nome, novo = form.novo.value.trim();
+  if(!novo){ $("#err").textContent = "Escreva o nome."; return; }
+  if(novo === antigo) return abrirCategorias();
+  if(V.categorias[aba].some(c => c !== antigo && norm(c) === norm(novo))){ $("#err").textContent = "Já existe uma categoria com esse nome nesta aba."; return; }
+  const btn = form.querySelector("[type=submit]"); btn.disabled = true; btn.textContent = "Salvando…";
+  try{ await renomearCategoria(aba, antigo, novo); if(catAtual === antigo) catAtual = novo; await recarregar(); abrirCategorias(); toast("✅ Categoria renomeada"); }
+  catch(e){ console.error(e); btn.disabled = false; btn.textContent = "Salvar"; $("#err").textContent = "Não consegui renomear agora 😕 Tente de novo."; }
+}
+
+function categoriaMover(aba, nome){
+  const outras = V.categorias[aba].filter(c => c !== nome);
+  if(!outras.length){ toast("Crie outra categoria antes de mover os itens."); return; }
+  abrirPainel(`
+    <h3 id="sheet-title">Mover itens</h3>
+    <form class="form" id="form-cat-mover" novalidate data-aba="${aba}" data-nome="${esc(nome)}">
+      <label>Mover os ${txtItens(contarNaCategoria(aba, nome))} de “${esc(nome)}” para:</label>
+      <select name="para">${outras.map(c => `<option>${esc(c)}</option>`).join("")}</select>
+      <div class="actions">
+        <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
+        <button type="submit" class="btn primary">Continuar</button>
+      </div>
+    </form>`);
+}
+function confirmarMover(form){
+  const aba = form.dataset.aba, de = form.dataset.nome, para = form.para.value, n = contarNaCategoria(aba, de);
+  abrirPainel(`
+    <h3 id="sheet-title">Mover itens?</h3>
+    <p style="margin:10px 0 8px">Os <strong>${txtItens(n)}</strong> de “${esc(de)}” vão para <strong>“${esc(para)}”</strong>.</p>
+    <p class="hint" style="font-size:13.5px">Depois disso, “${esc(de)}” fica vazia e pode ser apagada. Se mudar de ideia, dá pra mover de volta.</p>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
+      <button type="button" class="btn primary" data-cat="mover-ok" data-aba="${aba}" data-nome="${esc(de)}" data-para="${esc(para)}">Mover</button>
+    </div>`);
+}
+async function moverOk(bt){
+  bt.disabled = true; bt.textContent = "Movendo…";
+  try{ const n = await moverCategoria(bt.dataset.aba, bt.dataset.nome, bt.dataset.para); await recarregar(); abrirCategorias(); toast(`✅ ${n} ite${n===1?"m movido":"ns movidos"}`); }
+  catch(e){ console.error(e); bt.disabled = false; bt.textContent = "Mover"; toast("⚠️ Não consegui mover agora. Tente de novo."); }
+}
+
+function categoriaApagar(aba, nome){
+  if(contarNaCategoria(aba, nome).total){ toast("Mova os itens antes de apagar."); return; }
+  abrirPainel(`
+    <h3 id="sheet-title">Apagar categoria?</h3>
+    <p style="margin:10px 0 8px">A categoria <strong>“${esc(nome)}”</strong> (${ABAS[aba].txt}) está vazia e vai sair da lista.</p>
+    <p class="hint" style="font-size:13.5px">Nenhum item é apagado. Se precisar dela de novo, é só criar outra com o mesmo nome.</p>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
+      <button type="button" class="btn danger" data-cat="apagar-ok" data-aba="${aba}" data-nome="${esc(nome)}">Apagar</button>
+    </div>`);
+}
+async function apagarOk(bt){
+  const aba = bt.dataset.aba, nome = bt.dataset.nome;
+  bt.disabled = true; bt.textContent = "Apagando…";
+  try{
+    V = await salvarPerfil(V, { categorias: { ...V.categorias, [aba]: V.categorias[aba].filter(c => c !== nome) } });
+    renderChips(); render(); abrirCategorias(); toast("🗑️ Categoria apagada");
+  }catch(e){ console.error(e); bt.disabled = false; bt.textContent = "Apagar"; toast("⚠️ Não consegui apagar agora. Tente de novo."); }
+}
+
+/* ---------- Insights: de onde a pessoa veio e contagem anônima ---------- */
+// Prioridade: marca no link (?de=bio, ?de=stories…) > site de onde veio > "direto".
+// A origem vale para a visita inteira (cliques seguintes contam com a mesma).
+const ORIGENS = { bio:"Link da bio", stories:"Stories", instagram:"Instagram (outros)", whatsapp:"WhatsApp",
+  google:"Google", facebook:"Facebook", direto:"Direto / sem origem", outro:"Outros sites" };
+const ORIGEM = (() => {
+  try{ const salva = sessionStorage.getItem("vitrine-origem"); if(salva && ORIGENS[salva]) return salva; }catch(e){}
+  const url = new URL(location.href);
+  let o = (url.searchParams.get("de") || "").toLowerCase().trim();
+  if(!o){
+    let host = ""; try{ host = document.referrer ? new URL(document.referrer).hostname : ""; }catch(e){}
+    if(!host || host === location.hostname) o = "direto";
+    else if(/instagram/.test(host)) o = "instagram";
+    else if(/whatsapp|wa\.me/.test(host)) o = "whatsapp";
+    else if(/(^|\.)google\./.test(host)) o = "google";
+    else if(/facebook|fb\.|messenger/.test(host)) o = "facebook";
+    else o = "outro";
+  }
+  if(!ORIGENS[o]) o = "outro";
+  try{ sessionStorage.setItem("vitrine-origem", o); }catch(e){}
+  // tira a marca do endereço: se a pessoa compartilhar o link, não leva o "?de=" junto
+  if(url.searchParams.has("de")){ url.searchParams.delete("de"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+  return o;
+})();
+// Não conta a própria dona (logada) nem o modo de segurança.
+// Cada pessoa conta 1 visita por sessão e 1 clique por item por sessão.
+const deveContar = () => !admin && !modoSeguranca;
+function contarVisita(){
+  if(!deveContar()) return;
+  try{ if(sessionStorage.getItem("vitrine-visita")) return; sessionStorage.setItem("vitrine-visita", "1"); }catch(e){}
+  registrarVisita(ORIGEM);
+}
+function contarClique(id){
+  if(!deveContar() || !id) return;
+  try{ const k = "vitrine-clique-" + id; if(sessionStorage.getItem(k)) return; sessionStorage.setItem(k, "1"); }catch(e){}
+  registrarClique(id, ORIGEM);
+}
+
 /* ---------- Eventos ---------- */
 $("#abas").addEventListener("click", e => { const b = e.target.closest("[data-aba]"); if(!b) return;
   abaAtual = b.dataset.aba; abaEscolhida = true; catAtual = "Todos"; lojaAtual = "todas"; filtroSelo = null; renderChips(); render(); });
@@ -523,6 +746,7 @@ async function copiarCupom(codigo){
   catch(e){ toast(`Cupom: ${codigo}`); }
 }
 $("#grid").addEventListener("click", e => {
+  const ir = e.target.closest("[data-clique]"); if(ir) contarClique(ir.dataset.clique);
   const op = e.target.closest("[data-op]"), ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]"), cp = e.target.closest("[data-copiar]");
   if(op) abrirOpiniao(porId(op.dataset.op));
   if(ed) abrirForm(ed.dataset.edit);
@@ -533,6 +757,18 @@ $("#grid").addEventListener("click", e => {
 $("#overlay").addEventListener("click", async e => {
   if(e.target.id === "overlay" || e.target.closest("[data-close]")) return fecharPainel();
   const cp = e.target.closest("[data-copiar]"); if(cp) return copiarCupom(cp.dataset.copiar);
+  const ir = e.target.closest("[data-clique]"); if(ir){ contarClique(ir.dataset.clique); return; }
+  const per = e.target.closest("[data-periodo]"); if(per) return abrirInsights(Number(per.dataset.periodo));
+  const ct = e.target.closest("[data-cat]");
+  if(ct && !ct.disabled){
+    const { aba, nome } = ct.dataset;
+    if(ct.dataset.cat === "renomear") return categoriaRenomear(aba, nome);
+    if(ct.dataset.cat === "mover") return categoriaMover(aba, nome);
+    if(ct.dataset.cat === "apagar") return categoriaApagar(aba, nome);
+    if(ct.dataset.cat === "mover-ok") return moverOk(ct);
+    if(ct.dataset.cat === "apagar-ok") return apagarOk(ct);
+    if(ct.dataset.cat === "voltar") return abrirCategorias();
+  }
   const seg = e.target.closest("[data-seg]");
   if(seg){
     const campo = seg.dataset.seg, valor = seg.dataset.v || null;
@@ -604,6 +840,8 @@ $("#overlay").addEventListener("submit", e => {
   if(e.target.id === "form") salvarForm(e.target);
   if(e.target.id === "form-login") fazerLogin(e.target);
   if(e.target.id === "form-perfil") salvarFormPerfil(e.target);
+  if(e.target.id === "form-cat-renomear") salvarRenomear(e.target);
+  if(e.target.id === "form-cat-mover") confirmarMover(e.target);
 });
 document.addEventListener("keydown", e => { if(e.key === "Escape") fecharPainel(); });
 
@@ -675,6 +913,8 @@ $("#entrar").addEventListener("click", abrirLogin);
 $("#sair").addEventListener("click", async () => { await sair(); await atualizarLogin(null); });
 $("#btn-lixeira").addEventListener("click", abrirLixeira);
 $("#btn-perfil").addEventListener("click", abrirPerfil);
+$("#btn-categorias").addEventListener("click", abrirCategorias);
+$("#btn-insights").addEventListener("click", () => { insightsCache = null; abrirInsights(30); });
 $("#fab").addEventListener("click", () => abrirForm(null));
 
 /* ---------- Início ---------- */
@@ -682,5 +922,6 @@ $("#fab").addEventListener("click", () => abrirForm(null));
   render();
   usuarioId = await usuarioLogado();
   await recarregar();
+  contarVisita();
   aoMudarLogin(id => { if(id !== usuarioId) atualizarLogin(id); });   // sessão expirou ou saiu em outra aba
 })();

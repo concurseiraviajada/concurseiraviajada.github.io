@@ -51,7 +51,7 @@ function produtoDoBanco(r){
     temCupom:!!r.tem_cupom, cupomCodigo:r.cupom_codigo || "", cupomDesconto:r.cupom_desconto || "",
     selo:r.selo || null,
     opiniao:{ texto:r.opiniao_texto || "", gosto:r.opiniao_gosto || [], atencao:r.opiniao_atencao || "" },
-    ordem:r.ordem, apagadoEm:r.apagado_em || null, atualizadoEm:r.atualizado_em };
+    ordem:r.ordem, apagadoEm:r.apagado_em || null, atualizadoEm:r.atualizado_em, criadoEm:r.criado_em };
 }
 function produtoParaBanco(p){
   const gratis = p.tipo === "gratis", comPreco = !gratis && p.preco != null, comCupom = !gratis && !!p.temCupom;
@@ -153,4 +153,35 @@ async function enviarFoto(blob, caminho){
 async function apagarFoto(caminho){
   if(!caminho || /^(data:|blob:|https?:)/.test(caminho)) return;
   try{ await sb.storage.from("fotos").remove([caminho]); }catch(e){}
+}
+
+/* ---------- Insights: contagens ANÔNIMAS (sem dados de quem visita) ---------- */
+// Visitantes só chamam estas duas funções do banco, que somam +1 no dia.
+// Erros são ignorados de propósito: contar nunca pode atrapalhar a vitrine.
+function registrarVisita(origem){
+  sb.rpc("registrar_visita", { p_slug: VITRINE_SLUG, p_origem: origem }).then(() => {}, () => {});
+}
+function registrarClique(produtoId, origem){
+  sb.rpc("registrar_clique", { p_produto: produtoId, p_origem: origem }).then(() => {}, () => {});
+}
+// Só a dona logada consegue ler (regras de segurança do banco)
+async function carregarInsights(desde){         // desde = "2026-10-01"
+  const [v, c] = await Promise.all([
+    sb.from("visitas_diarias").select("dia,origem,total").gte("dia", desde),
+    sb.from("cliques_diarios").select("produto_id,dia,origem,total").gte("dia", desde),
+  ]);
+  if(v.error) throw v.error;
+  if(c.error) throw c.error;
+  return { visitas: v.data, cliques: c.data };
+}
+
+/* ---------- Categorias (renomear e mover de uma vez só, no banco) ---------- */
+async function renomearCategoria(aba, antigo, novo){
+  const { error } = await sb.rpc("renomear_categoria", { p_aba: aba, p_antigo: antigo, p_novo: novo });
+  if(error) throw error;
+}
+async function moverCategoria(aba, de, para){
+  const { data, error } = await sb.rpc("mover_categoria", { p_aba: aba, p_de: de, p_para: para });
+  if(error) throw error;
+  return data;                                   // quantos itens mudaram
 }
