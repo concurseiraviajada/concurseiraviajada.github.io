@@ -259,3 +259,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
 .cat-acoes{display:flex;gap:6px;flex:none}
 .cat-acoes .btn{flex:none;padding:8px 10px;font-size:13px}
 .cat-acoes .btn:disabled{opacity:.35}
+.ins-periodo{flex-wrap:wrap}
+.ins-datas{background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 12px 12px;margin:8px 0 4px}
+.ins-datas .btn{width:100%;margin-top:4px}
+.form input[type=date]{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font:inherit;font-size:16px;color:var(--ink)}
+.ins-mostrando{font-size:13px;color:var(--muted);margin:8px 0 2px}
+.ins-datas .row>div{min-width:0}
+.form input[type=date]{min-width:0;max-width:100%;display:block}

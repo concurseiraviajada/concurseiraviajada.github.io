@@ -513,29 +513,55 @@ async function salvarFormPerfil(form){
 /* ---------- Painel de Insights (só a dona vê) ---------- */
 const INICIO_INSIGHTS = "18/11/2026";          // dia em que a contagem começou
 const DIAS_SEM_CLIQUE = 30;
-let insightsCache = null;                      // { visitas, cliques } dos últimos 90 dias
+const INICIO_ISO = "2026-11-18";
+let insightsCache = null;                      // { desde, visitas, cliques }
+let insightsFiltro = "30";                     // "hoje" | "ontem" | "7" | "15" | "30" | "90" | "datas"
+let insightsDatas = null;                      // { de, ate } quando o filtro é "📅 Datas"
+const FILTROS_INSIGHTS = [["hoje","Hoje"], ["ontem","Ontem"], ["7","7 dias"], ["15","15 dias"], ["30","30 dias"], ["90","90 dias"]];
 const isoDia = d => { const x = new Date(d); return x.getFullYear() + "-" + String(x.getMonth()+1).padStart(2,"0") + "-" + String(x.getDate()).padStart(2,"0"); };
 const diasAtras = n => isoDia(Date.now() - n * 86400000);
 const fmt = n => Number(n).toLocaleString("pt-BR");
+const dataBR = iso => iso.split("-").reverse().join("/");      // "2026-11-18" -> "18/11/2026"
+// Período de cada filtro. "7 dias" = hoje e os 6 dias anteriores.
+function intervaloInsights(filtro){
+  const hoje = diasAtras(0);
+  if(filtro === "hoje") return { de: hoje, ate: hoje };
+  if(filtro === "ontem"){ const o = diasAtras(1); return { de: o, ate: o }; }
+  if(filtro === "datas" && insightsDatas) return insightsDatas;
+  const n = Number(filtro) || 30;
+  return { de: diasAtras(n - 1), ate: hoje };
+}
+function textoPeriodo(filtro, { de, ate }){
+  if(filtro === "hoje") return `Hoje (${dataBR(de)})`;
+  if(filtro === "ontem") return `Ontem (${dataBR(de)})`;
+  return de === ate ? dataBR(de) : `${dataBR(de)} a ${dataBR(ate)}`;
+}
 
 function barra(valor, maximo){
   const pct = maximo ? Math.max(2, Math.round(valor / maximo * 100)) : 0;
   return `<span class="ins-barra" aria-hidden="true"><span style="width:${valor ? pct : 0}%"></span></span>`;
 }
 
-async function abrirInsights(periodo = 30){
+async function abrirInsights(filtro = insightsFiltro, datas){
+  if(filtro === "datas" && datas) insightsDatas = datas;
+  if(filtro === "datas" && !insightsDatas) insightsDatas = { de: diasAtras(6), ate: diasAtras(0) };
+  insightsFiltro = filtro;
+  const { de, ate } = intervaloInsights(filtro);
+  const desde30 = diasAtras(DIAS_SEM_CLIQUE - 1);
+  const precisaDesde = de < desde30 ? de : desde30;      // o selo 💤 sempre olha os últimos 30 dias
   abrirPainel(`<h3 id="sheet-title">📊 Insights</h3><p class="hint" style="margin-top:6px">Carregando os números…</p>`);
   try{
-    if(!insightsCache) insightsCache = await carregarInsights(diasAtras(89));
+    if(!insightsCache || precisaDesde < insightsCache.desde)
+      insightsCache = { desde: precisaDesde, ...(await carregarInsights(precisaDesde)) };
   }catch(e){
     console.error(e);
     abrirPainel(`<h3 id="sheet-title">📊 Insights</h3><p class="err">Não consegui carregar os números agora. Tente de novo em instantes.</p>
       <div class="actions"><button type="button" class="btn ghost" data-close>Fechar</button></div>`);
     return;
   }
-  const desde = diasAtras(periodo - 1), desde30 = diasAtras(DIAS_SEM_CLIQUE - 1);
-  const visitas = insightsCache.visitas.filter(v => v.dia >= desde);
-  const cliques = insightsCache.cliques.filter(c => c.dia >= desde);
+  const noPeriodo = x => x.dia >= de && x.dia <= ate;
+  const visitas = insightsCache.visitas.filter(noPeriodo);
+  const cliques = insightsCache.cliques.filter(noPeriodo);
   const totalVisitas = visitas.reduce((s, v) => s + v.total, 0);
   const totalCliques = cliques.reduce((s, c) => s + c.total, 0);
   const taxa = totalVisitas ? Math.round(totalCliques / totalVisitas * 100) : 0;
@@ -552,12 +578,23 @@ async function abrirInsights(periodo = 30){
   const maxItem = itens.length ? itens[0].n : 0;
   const semClique = p => !porItem30[p.id] && p.criadoEm && (Date.now() - new Date(p.criadoEm).getTime()) >= DIAS_SEM_CLIQUE * 86400000;
 
-  const chip = n => `<button type="button" class="chip ${n===periodo?"on":""}" data-periodo="${n}">${n} dias</button>`;
+  const chip = ([k, txt]) => `<button type="button" class="chip ${k===filtro?"on":""}" data-periodo="${k}">${txt}</button>`;
+  const hojeIso = diasAtras(0);
   abrirPainel(`
     <h3 id="sheet-title">📊 Insights</h3>
     <p class="hint" style="margin-top:4px">Contagens anônimas: dá pra saber quantos, nunca quem. Suas próprias visitas (logada) não contam.
       Contando desde ${INICIO_INSIGHTS}.</p>
-    <div class="chips ins-periodo">${chip(7)}${chip(30)}${chip(90)}</div>
+    <div class="chips ins-periodo">${FILTROS_INSIGHTS.map(chip).join("")}${chip(["datas", "📅 Datas"])}</div>
+    ${filtro === "datas" ? `
+    <form class="form ins-datas" id="form-ins-datas" novalidate>
+      <div class="row">
+        <div><label for="ins-de">De</label><input type="date" id="ins-de" name="de" value="${de}" min="${INICIO_ISO}" max="${hojeIso}"></div>
+        <div><label for="ins-ate">Até</label><input type="date" id="ins-ate" name="ate" value="${ate}" min="${INICIO_ISO}" max="${hojeIso}"></div>
+      </div>
+      <p class="err" id="err"></p>
+      <button type="submit" class="btn primary">Ver este período</button>
+    </form>` : ""}
+    <p class="ins-mostrando">Mostrando: <strong>${textoPeriodo(filtro, { de, ate })}</strong></p>
 
     <div class="ins-numeros">
       <div class="ins-num"><strong>${fmt(totalVisitas)}</strong><span>visitas na vitrine</span></div>
@@ -761,7 +798,7 @@ $("#overlay").addEventListener("click", async e => {
   if(e.target.id === "overlay" || e.target.closest("[data-close]")) return fecharPainel();
   const cp = e.target.closest("[data-copiar]"); if(cp) return copiarCupom(cp.dataset.copiar);
   const ir = e.target.closest("[data-clique]"); if(ir){ contarClique(ir.dataset.clique); return; }
-  const per = e.target.closest("[data-periodo]"); if(per) return abrirInsights(Number(per.dataset.periodo));
+  const per = e.target.closest("[data-periodo]"); if(per) return abrirInsights(per.dataset.periodo);
   const ct = e.target.closest("[data-cat]");
   if(ct && !ct.disabled){
     const { aba, nome } = ct.dataset;
@@ -845,6 +882,13 @@ $("#overlay").addEventListener("submit", e => {
   if(e.target.id === "form-perfil") salvarFormPerfil(e.target);
   if(e.target.id === "form-cat-renomear") salvarRenomear(e.target);
   if(e.target.id === "form-cat-mover") confirmarMover(e.target);
+  if(e.target.id === "form-ins-datas"){
+    const de = e.target.de.value, ate = e.target.ate.value;
+    if(!de || !ate){ $("#err").textContent = "Escolha as duas datas."; return; }
+    if(de > ate){ $("#err").textContent = "A data “De” precisa ser antes da “Até”."; return; }
+    if(ate > diasAtras(0)){ $("#err").textContent = "A data “Até” não pode ser no futuro."; return; }
+    abrirInsights("datas", { de, ate });
+  }
 });
 document.addEventListener("keydown", e => { if(e.key === "Escape") fecharPainel(); });
 
@@ -917,7 +961,7 @@ $("#sair").addEventListener("click", async () => { await sair(); await atualizar
 $("#btn-lixeira").addEventListener("click", abrirLixeira);
 $("#btn-perfil").addEventListener("click", abrirPerfil);
 $("#btn-categorias").addEventListener("click", abrirCategorias);
-$("#btn-insights").addEventListener("click", () => { insightsCache = null; abrirInsights(30); });
+$("#btn-insights").addEventListener("click", () => { insightsCache = null; abrirInsights(insightsFiltro); });
 $("#fab").addEventListener("click", () => abrirForm(null));
 
 /* ---------- Início ---------- */
