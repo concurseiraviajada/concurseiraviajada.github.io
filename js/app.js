@@ -592,6 +592,8 @@ const contarNaCategoria = (aba, cat) => {
   const todos = PRODUTOS.filter(p => p.aba === aba && p.cat === cat);
   return { total: todos.length, lixeira: todos.filter(p => p.apagadoEm).length };
 };
+const os_ = n => n.total === 1 ? "o" : "os";           // "o 1 item" / "os 4 itens"
+const Os_ = n => n.total === 1 ? "O" : "Os";
 const txtItens = ({ total, lixeira }) => total
   ? `${total} ite${total===1?"m":"ns"}${lixeira ? ` (${lixeira} na lixeira)` : ""}` : "vazia";
 
@@ -626,7 +628,7 @@ function categoriaRenomear(aba, nome){
     <form class="form" id="form-cat-renomear" novalidate data-aba="${aba}" data-nome="${esc(nome)}">
       <label>Novo nome para “${esc(nome)}”</label>
       <input type="text" name="novo" value="${esc(nome)}" maxlength="40">
-      <p class="hint">${n.total ? `Os ${txtItens(n)} desta categoria passam para o nome novo.` : "A categoria está vazia."}</p>
+      <p class="hint">${n.total ? `${Os_(n)} ${txtItens(n)} desta categoria ${n.total === 1 ? "passa" : "passam"} para o nome novo.` : "A categoria está vazia."}</p>
       <p class="err" id="err"></p>
       <div class="actions">
         <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
@@ -650,7 +652,7 @@ function categoriaMover(aba, nome){
   abrirPainel(`
     <h3 id="sheet-title">Mover itens</h3>
     <form class="form" id="form-cat-mover" novalidate data-aba="${aba}" data-nome="${esc(nome)}">
-      <label>Mover os ${txtItens(contarNaCategoria(aba, nome))} de “${esc(nome)}” para:</label>
+      <label>Mover ${os_(contarNaCategoria(aba, nome))} ${txtItens(contarNaCategoria(aba, nome))} de “${esc(nome)}” para:</label>
       <select name="para">${outras.map(c => `<option>${esc(c)}</option>`).join("")}</select>
       <div class="actions">
         <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
@@ -662,7 +664,7 @@ function confirmarMover(form){
   const aba = form.dataset.aba, de = form.dataset.nome, para = form.para.value, n = contarNaCategoria(aba, de);
   abrirPainel(`
     <h3 id="sheet-title">Mover itens?</h3>
-    <p style="margin:10px 0 8px">Os <strong>${txtItens(n)}</strong> de “${esc(de)}” vão para <strong>“${esc(para)}”</strong>.</p>
+    <p style="margin:10px 0 8px">${Os_(n)} <strong>${txtItens(n)}</strong> de “${esc(de)}” ${n.total === 1 ? "vai" : "vão"} para <strong>“${esc(para)}”</strong>.</p>
     <p class="hint" style="font-size:13.5px">Depois disso, “${esc(de)}” fica vazia e pode ser apagada. Se mudar de ideia, dá pra mover de volta.</p>
     <div class="actions">
       <button type="button" class="btn ghost" data-cat="voltar">Cancelar</button>
@@ -701,9 +703,12 @@ async function apagarOk(bt){
 const ORIGENS = { bio:"Link da bio", stories:"Stories", instagram:"Instagram (outros)", whatsapp:"WhatsApp",
   google:"Google", facebook:"Facebook", direto:"Direto / sem origem", outro:"Outros sites" };
 const ORIGEM = (() => {
-  try{ const salva = sessionStorage.getItem("vitrine-origem"); if(salva && ORIGENS[salva]) return salva; }catch(e){}
   const url = new URL(location.href);
-  let o = (url.searchParams.get("de") || "").toLowerCase().trim();
+  const marca = (url.searchParams.get("de") || "").toLowerCase().trim();
+  // tira a marca do endereço SEMPRE: se a pessoa compartilhar o link, não leva o "?de=" junto
+  if(url.searchParams.has("de")){ url.searchParams.delete("de"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
+  try{ const salva = sessionStorage.getItem("vitrine-origem"); if(salva && ORIGENS[salva]) return salva; }catch(e){}
+  let o = marca;
   if(!o){
     let host = ""; try{ host = document.referrer ? new URL(document.referrer).hostname : ""; }catch(e){}
     if(!host || host === location.hostname) o = "direto";
@@ -715,8 +720,6 @@ const ORIGEM = (() => {
   }
   if(!ORIGENS[o]) o = "outro";
   try{ sessionStorage.setItem("vitrine-origem", o); }catch(e){}
-  // tira a marca do endereço: se a pessoa compartilhar o link, não leva o "?de=" junto
-  if(url.searchParams.has("de")){ url.searchParams.delete("de"); history.replaceState(null, "", url.pathname + url.search + url.hash); }
   return o;
 })();
 // Não conta a própria dona (logada) nem o modo de segurança.
