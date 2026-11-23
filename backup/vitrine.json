@@ -10,7 +10,8 @@
       "Maternidade",
       "Beleza",
       "Papelaria",
-      "Casa"
+      "Casa",
+      "Saúde"
     ],
     "categorias_estudos": [
       "Cursos",
@@ -18,9 +19,34 @@
       "Ferramentas"
     ],
     "criado_em": "2026-11-16T02:42:01.480049+00:00",
-    "atualizado_em": "2026-11-16T04:31:27.64218+00:00"
+    "atualizado_em": "2026-11-23T11:15:02.139127+00:00"
   },
   "produtos": [
+    {
+      "id": "952283dc-563b-481e-be73-28556c1060c4",
+      "aba": "achadinhos",
+      "categoria": "Saúde",
+      "tipo": "produto",
+      "nome": "Kit Goodies Anti OX",
+      "frase": "Proteção antioxidante do organismo,ajuda na minha imunidade.",
+      "emoji": "🛍️",
+      "foto": "a9f0c262-11b2-4953-8ebb-268a801567c8/produtos/952283dc-563b-481e-be73-28556c1060c4-1795432502428.jpg",
+      "link": "https://www.dailygoodies.com.br/produtos/goodies-anti-ox/",
+      "loja": "outra",
+      "loja_nome": "Site",
+      "preco_pago": 171.9,
+      "pago_em": "2026-11-01",
+      "tem_cupom": true,
+      "cupom_codigo": "CAROLPEDRAO",
+      "cupom_desconto": "10%",
+      "selo": null,
+      "opiniao_texto": null,
+      "opiniao_gosto": [],
+      "opiniao_atencao": null,
+      "ordem": 1795432503.03962,
+      "criado_em": "2026-11-23T11:15:03.031769+00:00",
+      "atualizado_em": "2026-11-23T11:16:24.352466+00:00"
+    },
     {
       "id": "279ab9a7-b985-46bf-b3c1-db3f44d9f733",
       "aba": "achadinhos",
